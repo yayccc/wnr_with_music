@@ -23,28 +23,25 @@
     <div class="bottom-resize"></div>
 
     <script src="supporter.js"></script>
+    <script src="music-manager.js"></script><!-- 全局音乐管理器 -->
     <div class="d-flex mx-auto justify-content-center align-items-center text-dark" id="main">
         <div id="time-bar" class="text-muted"></div>
         <div id="time-bar-macos" class="text-muted"></div><!-- time-bar for systems -->
         <div id="controller">
-            
-            <a href="javascript:floatingOpener()" class="small work" id="mini-mode"><i class="iconfont icon-suoxiao"
-            ></i></a>&nbsp;&nbsp;
+
+            <a href="javascript:floatingOpener()" class="small work" id="mini-mode"><i
+                    class="iconfont icon-suoxiao"></i></a>&nbsp;&nbsp;
             <a href="javascript:call('window-hide')" class="small work" id="win-hider"><i
-                    class="iconfont icon-dockpanel" id="window-hide"></i></a><span
-                id="no-use-space">&nbsp;&nbsp;</span>
+                    class="iconfont icon-dockpanel" id="window-hide"></i></a><span id="no-use-space">&nbsp;&nbsp;</span>
             <a href="javascript:call('window-maximize')" class="small work" id="win-max"><i
                     class="iconfont icon-maximize" id="window-max"></i></a>&nbsp;&nbsp;
             <a href="javascript:call('window-minimize')" class="small work" id="window-minimize"><i
-                    class="iconfont icon-minus"
-            ></i></a><span
-                class="should-lock">&nbsp;&nbsp;</span>
-            <a href="javascript:call('window-close-chk')" class="small work should-lock"
-               id="exit"><i
+                    class="iconfont icon-minus"></i></a><span class="should-lock">&nbsp;&nbsp;</span>
+            <a href="javascript:call('window-close-chk')" class="small work should-lock" id="exit"><i
                     class="iconfont icon-close"></i></a>
             <script>
                 $('#helper').attr('title', i18n.__('helper'));
-              //  $('#add-time').attr('title', i18n.__('minus-mode'));
+                //  $('#add-time').attr('title', i18n.__('minus-mode'));
                 $('#mini-mode').attr('title', i18n.__('mini-mode-msg'));
                 $('#window-hide').attr('title', i18n.__('window-hide'))
                 $('#window-max').attr('title', i18n.__('window-max'));
@@ -55,13 +52,26 @@
         <div id="timer" class="justify-content-center align-content-center text-center">
             &nbsp;&nbsp;
             <input type="text" id="title" class="text-center h4" maxlength="13"
-                   style="transform: translateX(5px); font-size: 0.4rem"
-                   oninput="modifyExternalTitleWin()" /><a href="javascript:openExternalTitleWin()"
-                                                           id="external" class="work"><i
-                class="iconfont icon-external-link"></i></a><br />
+                style="transform: translateX(5px); font-size: 0.4rem" oninput="modifyExternalTitleWin()" /><a
+                href="javascript:openExternalTitleWin()" id="external" class="work"><i
+                    class="iconfont icon-external-link"></i></a><br />
+
+            <!-- 音乐控制器 -->
+            <div id="timer-music-controls" class="text-center small text-muted mb-2">
+                <div id="timer-music-name" class="extreme-small mb-1"></div>
+                <div>
+                    <input type="file" id="timer-music-file-input" accept="audio/*" style="display: none;" />
+                    <button id="timer-select-music-btn" class="btn btn-sm btn-outline-secondary"
+                        style="font-size: 0.7rem; padding: 2px 8px;">选择音乐</button>
+                    <button id="timer-play-btn" class="btn btn-sm btn-outline-primary"
+                        style="font-size: 0.7rem; padding: 2px 8px;">播放</button>
+                    <button id="timer-pause-btn" class="btn btn-sm btn-outline-danger"
+                        style="font-size: 0.7rem; padding: 2px 8px;">暂停</button>
+                </div>
+            </div>
+
             <div contenteditable="true" id="notes" class="text-center small text-muted"
-                 style="font-size: 0.4rem; margin-bottom: 4px"
-                 oninput="modifyExternalTitleWin()"></div>
+                style="font-size: 0.4rem; margin-bottom: 4px" oninput="modifyExternalTitleWin()"></div>
             <script>
                 function openExternalTitleWin() {
                     ipc.send("open-external-title-win", { title: $("#title").val(), notes: $("#notes").text() });
@@ -114,19 +124,19 @@
                 notesNode.addEventListener('keydown', function (e) {
                     setTimeout(function () {
                         let allowedKeys = (
-                                e.which === 8 ||  /* BACKSPACE */
-                                e.which === 35 || /* END */
-                                e.which === 36 || /* HOME */
-                                e.which === 37 || /* LEFT */
-                                e.which === 38 || /* UP */
-                                e.which === 39 || /* RIGHT*/
-                                e.which === 40 || /* DOWN */
-                                e.which === 46 || /* DEL*/
-                                e.ctrlKey === true && e.which === 65 || /* CTRL + A */
-                                e.ctrlKey === true && e.which === 88 || /* CTRL + X */
-                                e.ctrlKey === true && e.which === 67 || /* CTRL + C */
-                                e.ctrlKey === true && e.which === 86 || /* CTRL + V */
-                                e.ctrlKey === true && e.which === 90    /* CTRL + Z */
+                            e.which === 8 ||  /* BACKSPACE */
+                            e.which === 35 || /* END */
+                            e.which === 36 || /* HOME */
+                            e.which === 37 || /* LEFT */
+                            e.which === 38 || /* UP */
+                            e.which === 39 || /* RIGHT*/
+                            e.which === 40 || /* DOWN */
+                            e.which === 46 || /* DEL*/
+                            e.ctrlKey === true && e.which === 65 || /* CTRL + A */
+                            e.ctrlKey === true && e.which === 88 || /* CTRL + X */
+                            e.ctrlKey === true && e.which === 67 || /* CTRL + C */
+                            e.ctrlKey === true && e.which === 86 || /* CTRL + V */
+                            e.ctrlKey === true && e.which === 90    /* CTRL + Z */
                         );
                         if (!allowedKeys && $(e.target).text().length >= 72) {
                             e.preventDefault();
@@ -178,29 +188,27 @@
             <div id="now-timing" class="text-center h1 work"></div>
             <br />
             <div class="text-center"><a id="stopper" href="javascript:stopAndCount()" class="text-muted"><i
-                    class="iconfont icon-pause"></i></a></div>
+                        class="iconfont icon-pause"></i></a></div>
             <br />
             <div class="text-center text-muted" id="more-options">
-                <a href="javascript:backcheck()" class="text-muted" id="back-index"><i class="iconfont icon-previous"
-                ></i><span
-                        class="focuser extreme-small controller-msg">
-                    <script>document.write(i18n.__('back'));</script>
-                </span></a>
+                <a href="javascript:backcheck()" class="text-muted" id="back-index"><i
+                        class="iconfont icon-previous"></i><span class="focuser extreme-small controller-msg">
+                        <script>document.write(i18n.__('back'));</script>
+                    </span></a>
                 <span id="skipper-space" class="should-lock">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
                 <a href="javascript:skipper()" class="text-muted" id="skipper-container">
-                    <span
-                            class="focuser extreme-small controller-msg">
-                    <script>document.write(i18n.__('skip'));</script>
-                </span><i class="iconfont icon-fastforward" id="skipper"></i>
+                    <span class="focuser extreme-small controller-msg">
+                        <script>document.write(i18n.__('skip'));</script>
+                    </span><i class="iconfont icon-fastforward" id="skipper"></i>
                 </a>
                 <br />
             </div>
             <input name="passcode-locker" id="passcode-rechecker" type="password" maxlength="11"
-                   onkeydown="if(event.keyCode === 13) recheck($('#passcode-rechecker').val());" />
+                onkeydown="if(event.keyCode === 13) recheck($('#passcode-rechecker').val());" />
             <br />
             <div class="text-center lead" id="backer">
-                <a href="javascript:backcheck()" class="text-muted" id="backindex2"><i class="iconfont icon-previous"
-                ></i></a>
+                <a href="javascript:backcheck()" class="text-muted" id="backindex2"><i
+                        class="iconfont icon-previous"></i></a>
             </div>
             <div class="text-center text-muted" id="only-one">
                 <h3>
@@ -214,48 +222,55 @@
             </div>
             <!-- container -->
             <div class="dropdown">
-                <button class="btn btn-secondary dropdown-toggle" type="button" id="time-adjust-dropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <button class="btn btn-secondary dropdown-toggle" type="button" id="time-adjust-dropdown"
+                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     <script>document.write(i18n.__('time_adjustment'));</script>
                 </button>
                 <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                     <!-- decrease5minutes -->
                     <a class="dropdown-item" href="javascript:adjustTime(-5)">
-                        <i class="iconfont icon-previous"></i> <script>document.write(i18n.__('decrease-5-minutes'));</script>
-                      </a>
+                        <i class="iconfont icon-previous"></i>
+                        <script>document.write(i18n.__('decrease-5-minutes'));</script>
+                    </a>
                     <!-- increase5minutes -->
-                    <a class="dropdown-item" href="javascript:adjustTime(5)" >
-                        <i class="iconfont icon-fastforward"></i> <script>document.write(i18n.__('increase-5-minutes'));</script>
-                      </a>
+                    <a class="dropdown-item" href="javascript:adjustTime(5)">
+                        <i class="iconfont icon-fastforward"></i>
+                        <script>document.write(i18n.__('increase-5-minutes'));</script>
+                    </a>
                     <div class="dropdown-divider"></div>
 
                     <!-- decrease1minutes -->
-                    <a class="dropdown-item" href="javascript:adjustTime(-1)" >
-                        <i class="iconfont icon-previous"></i> <script>document.write(i18n.__('decrease-1-minute'));</script>
+                    <a class="dropdown-item" href="javascript:adjustTime(-1)">
+                        <i class="iconfont icon-previous"></i>
+                        <script>document.write(i18n.__('decrease-1-minute'));</script>
                     </a>
                     <!-- increase1minutes -->
-                    <a class="dropdown-item" href="javascript:adjustTime(1)" >
-                        <i class="iconfont icon-fastforward"></i> <script>document.write(i18n.__('increase-1-minute'));</script>
+                    <a class="dropdown-item" href="javascript:adjustTime(1)">
+                        <i class="iconfont icon-fastforward"></i>
+                        <script>document.write(i18n.__('increase-1-minute'));</script>
                     </a>
                     <div class="dropdown-divider"></div>
 
                     <!-- decrease15seconds -->
-                    <a class="dropdown-item" href="javascript:adjustTime(-0.25)" >
-                        <i class="iconfont icon-previous"></i> <script>document.write(i18n.__('decrease-15-seconds'));</script>
+                    <a class="dropdown-item" href="javascript:adjustTime(-0.25)">
+                        <i class="iconfont icon-previous"></i>
+                        <script>document.write(i18n.__('decrease-15-seconds'));</script>
                     </a>
                     <!-- increase15seconds -->
                     <a class="dropdown-item" href="javascript:adjustTime(0.25)">
-                        <i class="iconfont icon-fastforward"></i> <script>document.write(i18n.__('increase-15-seconds'));</script>
+                        <i class="iconfont icon-fastforward"></i>
+                        <script>document.write(i18n.__('increase-15-seconds'));</script>
                     </a>
                     <div class="dropdown-divider"></div>
 
-          
-                    <a class="dropdown-item" href="javascript:mistake()" >
+
+                    <a class="dropdown-item" href="javascript:mistake()">
                         <script>document.write(i18n.__('fullscreen-experience-tip-mistake'));</script>
                     </a>
                 </div>
             </div>
-            <script>       
-                $(document).ready(function() {
+            <script>
+                $(document).ready(function () {
                     if (methodFromStart === 3) {
                         // hide the menu
                         $("#time-adjust-dropdown").hide();
@@ -285,9 +300,8 @@
         <p class="small text-grey font-weight-bolder" style="margin-left: 0" id="dialog-title">wnr</p>
         <p id="dialog-msg" class="small" style="line-height: 1.5; width: 210px; line-break: anywhere">Message</p>
         <div id="dialog-buttons" style="width:210px" class="text-right">
-            <a type="button" id="dialog-ok" class="btn btn-outline-primary btn-sm text-right"
-               style="font-size: 12px"
-               href="javascript:fullscreenCustomDialog('off', '', '', '')">
+            <a type="button" id="dialog-ok" class="btn btn-outline-primary btn-sm text-right" style="font-size: 12px"
+                href="javascript:fullscreenCustomDialog('off', '', '', '')">
                 <script>document.write(i18n.__('ok'))</script>
             </a>
         </div>
@@ -367,7 +381,7 @@
                             ipc.send("floating-conversation", {
                                 topic: "time-left",
                                 val: (((method === 1) ? workTime : restTime) - new Date().getTime() + startTime -
-                                        (times === 0 ? firstTimeDiscount : 0)) / 60000,
+                                    (times === 0 ? firstTimeDiscount : 0)) / 60000,
                                 percentage: Math.round(lastRecordedProgress * 100),
                                 method: method,
                                 isWorking: isClockWorking
@@ -392,7 +406,7 @@
             if (store.get("islocked")) $("#passcode-rechecker").css("display", "inline");
             else backRelauncher();
         }
-        function mistake(){
+        function mistake() {
             return
         }
 
@@ -470,29 +484,29 @@
         })();
 
         var
-                title = decodeURI($_GET['title']),
-                note = decodeURI($_GET['note']),
-                workTime = decodeURI($_GET['work-time']) * 60000,
-                restTime = decodeURI($_GET['rest-time']) * 60000,//use ms
-                originalRestTime = restTime,
-                originalWorkTime = workTime,
-                loop = Number(decodeURI($_GET['loop'])),
-                workTimeFocused = (decodeURI($_GET['work-time-focused']) !== "false"),
-                restTimeFocused = (decodeURI($_GET['rest-time-focused']) !== "false"),
-                restored = (decodeURI($_GET['restored']) !== "false"),
-                times = (isNaN(Number(decodeURI($_GET['times'])))) ? 0 : Number(decodeURI($_GET['times'])),
-                methodFromStart = Number(decodeURI($_GET['method'])),
-                continueLoop = (decodeURI($_GET['continueloop']) !== "false"),
-                h = i18n.__('h'),
-                min = i18n.__('min'),
-                s = i18n.__('s'),
-                stopperTimeout = null,
-                pausingTimeout = null,
-                isLongRest = false,
-                isFirstTimeOnlyRest = decodeURI($_GET['work-time']) === "0.7777",
-                isOnlyRest = isFirstTimeOnlyRest,
-                firstTimeDiscount = isNaN(decodeURI($_GET['discount'])) ? 0 : decodeURI($_GET['discount']) * 60000,
-                longBreakFrequence = -1;
+            title = decodeURI($_GET['title']),
+            note = decodeURI($_GET['note']),
+            workTime = decodeURI($_GET['work-time']) * 60000,
+            restTime = decodeURI($_GET['rest-time']) * 60000,//use ms
+            originalRestTime = restTime,
+            originalWorkTime = workTime,
+            loop = Number(decodeURI($_GET['loop'])),
+            workTimeFocused = (decodeURI($_GET['work-time-focused']) !== "false"),
+            restTimeFocused = (decodeURI($_GET['rest-time-focused']) !== "false"),
+            restored = (decodeURI($_GET['restored']) !== "false"),
+            times = (isNaN(Number(decodeURI($_GET['times'])))) ? 0 : Number(decodeURI($_GET['times'])),
+            methodFromStart = Number(decodeURI($_GET['method'])),
+            continueLoop = (decodeURI($_GET['continueloop']) !== "false"),
+            h = i18n.__('h'),
+            min = i18n.__('min'),
+            s = i18n.__('s'),
+            stopperTimeout = null,
+            pausingTimeout = null,
+            isLongRest = false,
+            isFirstTimeOnlyRest = decodeURI($_GET['work-time']) === "0.7777",
+            isOnlyRest = isFirstTimeOnlyRest,
+            firstTimeDiscount = isNaN(decodeURI($_GET['discount'])) ? 0 : decodeURI($_GET['discount']) * 60000,
+            longBreakFrequence = -1;
 
         if (isOnlyRest) ipc.send("enter-only-rest");
 
@@ -517,7 +531,7 @@
         });
 
         let $nowTiming = $("#now-timing"), $bottomBar = $("#bottom-bar"), $timeBar = $("#time-bar"),
-                $timeBarMacOS = $("#time-bar-macos");//cache frequently using doms
+            $timeBarMacOS = $("#time-bar-macos");//cache frequently using doms
 
         //method = 3 means liberal / positive timer
         if (methodFromStart === 3) {
@@ -607,35 +621,35 @@
 
             //method: 1-work / 2-rest, moreThanOneMin: more than 1 min left
             var startTime,
-                    int,
-                    pauseInt = null,
-                    tempVariable,
-                    nowTime,
-                    timeGot,
-                    seconds,
-                    minutes,
-                    hours,
-                    method = 1,
-                    isClockWorking = 1,
-                    moreThanOneMin = ((method === 1 && workTime > 60000) || isOnlyRest && restTime > 60000) ? 1 : 0,
-                    lastRecordedMinutesLeft = -1,
-                    lastRecordedHoursLeft = -1,
-                    systemName = process.platform,
-                    progress = 0.00,
-                    remainMinutes = 0,
-                    lastRecordedRemain = -1,
-                    lastRecordedSecond = -1,
-                    lastRecordedProgress = 0.00,
-                    wasCounting = true,
-                    shouldNap,
-                    napInterval = 0,
-                    lastNapSecond = 0,
-                    canStop = true,
-                    stopCounter = 0,
-                    isBothSkipperAndBackerEnabled = true,
-                    soonFinishTipMethod = 0,
-                    hasSoonFinishTipPosted = false,
-                    lastTimePositiveMinutes = -1;
+                int,
+                pauseInt = null,
+                tempVariable,
+                nowTime,
+                timeGot,
+                seconds,
+                minutes,
+                hours,
+                method = 1,
+                isClockWorking = 1,
+                moreThanOneMin = ((method === 1 && workTime > 60000) || isOnlyRest && restTime > 60000) ? 1 : 0,
+                lastRecordedMinutesLeft = -1,
+                lastRecordedHoursLeft = -1,
+                systemName = process.platform,
+                progress = 0.00,
+                remainMinutes = 0,
+                lastRecordedRemain = -1,
+                lastRecordedSecond = -1,
+                lastRecordedProgress = 0.00,
+                wasCounting = true,
+                shouldNap,
+                napInterval = 0,
+                lastNapSecond = 0,
+                canStop = true,
+                stopCounter = 0,
+                isBothSkipperAndBackerEnabled = true,
+                soonFinishTipMethod = 0,
+                hasSoonFinishTipPosted = false,
+                lastTimePositiveMinutes = -1;
 
             if (store.has("soon-finish-tip")) {
                 soonFinishTipMethodList = [0, 5, 7, 10, 15, 20];
@@ -779,7 +793,7 @@
                     if (store.get("time-end-sound") !== i18n.__("custom"))
                         player.src = path.join(__dirname, "\\res\\sound\\" + (store.has("time-end-sound") ? store.get("time-end-sound") : "tick") + ".mp3");
                     else if ((!store.has("custom-work-time-end-sound") || store.get("custom-work-time-end-sound") === "")
-                            && store.get("time-end-sound") === i18n.__("custom"))
+                        && store.get("time-end-sound") === i18n.__("custom"))
                         player.src = path.join(__dirname, "\\res\\sound\\tick.mp3");
                     else
                         player.src = store.get("custom-work-time-end-sound");
@@ -787,7 +801,7 @@
                     if (store.get("all-end-sound") !== i18n.__("custom"))
                         player.src = path.join(__dirname, "\\res\\sound\\" + (store.has("all-end-sound") ? store.get("all-end-sound") : "piano") + ".mp3");
                     else if ((!store.has("custom-all-time-end-sound") || store.get("custom-all-time-end-sound") === "")
-                            && store.get("all-end-sound") === i18n.__("custom"))
+                        && store.get("all-end-sound") === i18n.__("custom"))
                         player.src = path.join(__dirname, "\\res\\sound\\piano.mp3");
                     else
                         player.src = store.get("custom-all-time-end-sound");
@@ -992,13 +1006,13 @@
                 }
                 warningGiver(0);
             }
-            function adjustTime(minutes){
+            function adjustTime(minutes) {
                 if (!window.isClockWorking) return;
-                const ms = minutes * 60 * 1000;                
+                const ms = minutes * 60 * 1000;
                 // adjust time according to mode
                 if (method === 1) {
                     // working mode: adjust work time
-                    
+
                     workTime = Math.max(10000, workTime + ms);
                 } else {
                     // rest mode: adjust rest time
@@ -1013,7 +1027,7 @@
             }
 
             function skipper() {
-                workTime= originalWorkTime;
+                workTime = originalWorkTime;
                 canOpenFloating = true;
                 hasSoonFinishTipPosted = false;
                 if (pausingTimeout) window.clearInterval(pausingTimeout);
@@ -1024,7 +1038,7 @@
                     if (store.get("time-end-sound") !== i18n.__("custom"))
                         player.src = path.join(__dirname, "\\res\\sound\\" + (store.has("time-end-sound") ? store.get("time-end-sound") : "tick") + ".mp3");
                     else if ((!store.has("custom-work-time-end-sound") || store.get("custom-work-time-end-sound") === "")
-                            && store.get("time-end-sound") === i18n.__("custom"))
+                        && store.get("time-end-sound") === i18n.__("custom"))
                         player.src = path.join(__dirname, "\\res\\sound\\tick.mp3");
                     else
                         player.src = store.get("custom-work-time-end-sound");
@@ -1074,7 +1088,7 @@
                                 isLongRest = true;
                             } else {
                                 restTime = originalRestTime;
-                                
+
                                 isLongRest = false;
                             }
                             if (methodFromStart !== 3) themeChanger();
@@ -1145,7 +1159,7 @@
                 nowTime = new Date();
                 tempVariable = nowTime.getTime();
                 if (method === 1) seconds = Math.floor((workTime - tempVariable + startTime -
-                        (times === 0 ? firstTimeDiscount : 0)) / 1000);
+                    (times === 0 ? firstTimeDiscount : 0)) / 1000);
                 else seconds = Math.floor((restTime - tempVariable + startTime) / 1000);
                 if (seconds > 0) {
                     if (method === 1) {
@@ -1261,6 +1275,134 @@
     </script>
     <script src="renderer.js"></script>
     <script src="theme.js"></script>
+
+    <!-- 音乐控制脚本 -->
+    <script>
+        // Timer页面的音乐控制功能
+        const timerMusicControls = document.getElementById('timer-music-controls');
+        const timerMusicName = document.getElementById('timer-music-name');
+        const timerMusicFileInput = document.getElementById('timer-music-file-input');
+        const timerSelectMusicBtn = document.getElementById('timer-select-music-btn');
+        const timerPlayBtn = document.getElementById('timer-play-btn');
+        const timerPauseBtn = document.getElementById('timer-pause-btn');
+
+        let timerMusicLoaded = false;
+        let timerIsPlaying = false;
+
+        // 页面加载时获取音乐状态
+        document.addEventListener('DOMContentLoaded', function () {
+            // 初始化音乐控制器显示状态
+            timerMusicName.textContent = '未选择音乐文件';
+            updateTimerButtonStates();
+            ipc.send('music-get-status');
+
+            // 监听音乐管理器状态变化
+            if (window.musicManager) {
+                // 设置定时器定期检查音乐管理器状态
+                setInterval(function () {
+                    const managerStatus = window.musicManager.getStatus();
+                    if (managerStatus.currentFile && timerMusicLoaded !== managerStatus.isLoaded) {
+                        timerMusicLoaded = managerStatus.isLoaded;
+                    }
+                    if (timerIsPlaying !== managerStatus.isPlaying) {
+                        timerIsPlaying = managerStatus.isPlaying;
+                        updateTimerButtonStates();
+                    }
+                }, 500);
+            }
+        });
+
+        // 监听音乐状态回复
+        ipc.on('music-status-reply', function (event, status) {
+            if (status.hasMusic) {
+                let displayName = status.fileName;
+                if (displayName.length > 20) {
+                    displayName = displayName.slice(0, 20) + '...';
+                }
+                timerMusicName.textContent = displayName;
+                timerMusicLoaded = true;
+                timerIsPlaying = status.isPlaying;
+                updateTimerButtonStates();
+            } else {
+                timerMusicName.textContent = '未选择音乐文件';
+                timerMusicLoaded = false;
+                timerIsPlaying = false;
+                updateTimerButtonStates();
+            }
+        });
+
+        // 监听音乐状态变化
+        ipc.on('music-status-changed', function (event, status) {
+            timerIsPlaying = status.isPlaying;
+            updateTimerButtonStates();
+        });
+
+        function updateTimerButtonStates() {
+            if (!timerMusicLoaded) {
+                timerPlayBtn.textContent = '播放';
+                timerPlayBtn.disabled = true;
+                timerPauseBtn.disabled = true;
+            } else if (timerIsPlaying) {
+                timerPlayBtn.textContent = '播放中...';
+                timerPlayBtn.disabled = true;
+                timerPauseBtn.disabled = false;
+            } else {
+                timerPlayBtn.textContent = '播放';
+                timerPlayBtn.disabled = false;
+                timerPauseBtn.disabled = false;
+            }
+        }
+
+        // 选择音乐文件按钮事件
+        timerSelectMusicBtn.addEventListener('click', function () {
+            timerMusicFileInput.click();
+        });
+
+        // 音乐文件选择事件
+        timerMusicFileInput.addEventListener('change', function (e) {
+            const file = e.target.files[0];
+            if (file) {
+                const filePath = file.path;
+                ipc.send('music-load', { filePath: filePath });
+
+                ipc.once('music-load-success', function (event, data) {
+                    let displayName = data.fileName;
+                    if (displayName.length > 20) {
+                        displayName = displayName.slice(0, 20) + '...';
+                    }
+                    timerMusicName.textContent = displayName;
+                    timerMusicLoaded = true;
+                    timerIsPlaying = false;
+                    updateTimerButtonStates();
+                });
+
+                ipc.once('music-load-error', function (event, error) {
+                    console.error('音乐加载失败:', error);
+                    timerMusicName.textContent = '音乐加载失败';
+                    timerMusicLoaded = false;
+                    timerIsPlaying = false;
+                    updateTimerButtonStates();
+                });
+            }
+        });
+
+        timerPlayBtn.addEventListener('click', function () {
+            if (timerMusicLoaded && !timerIsPlaying) {
+                ipc.send('music-play');
+                // 立即更新按钮状态以提供即时反馈
+                timerPlayBtn.textContent = '播放中...';
+                timerPlayBtn.disabled = true;
+            }
+        });
+
+        timerPauseBtn.addEventListener('click', function () {
+            if (timerMusicLoaded && timerIsPlaying) {
+                ipc.send('music-pause');
+                // 立即更新按钮状态以提供即时反馈
+                timerPauseBtn.disabled = true;
+            }
+        });
+    </script>
 </body>
 
 </html>

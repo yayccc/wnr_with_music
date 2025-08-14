@@ -43,6 +43,7 @@
     <div class="bottom-resize"></div>
 
     <script src="supporter.js"></script><!-- support wnr running -->
+    <script src="music-manager.js"></script><!-- 全局音乐管理器 -->
     <script src="updater.js"></script><!-- check for updates -->
     <script>
         if (!store.get('tour')) {
@@ -331,7 +332,6 @@
                     <button id="pause-music-btn" class="btn btn-sm btn-outline-danger"
                         style="min-width:64px;max-width:100px;" disabled>暂停</button>
                 </div>
-                <audio id="custom-audio" preload="auto"></audio>
             </div>
         </div>
         <button id="bottom-btn" type="button" class="btn btn-outline-primary" onclick="keyDownSubmitter()">
@@ -722,15 +722,70 @@
         </script>
         <script src="renderer.js"></script>
         <script>
-            // 自定义音乐播放功能
+            // 自定义音乐播放功能（使用主进程管理）
             const musicFileInput = document.getElementById('music-file-input');
             const selectMusicBtn = document.getElementById('select-music-btn');
             const playMusicBtn = document.getElementById('play-music-btn');
             const pauseMusicBtn = document.getElementById('pause-music-btn');
             const musicFileName = document.getElementById('music-file-name');
-            const customAudio = document.getElementById('custom-audio');
 
             let musicLoaded = false;
+            let isPlaying = false;
+
+            // 页面加载时获取音乐状态
+            document.addEventListener('DOMContentLoaded', function () {
+                ipc.send('music-get-status');
+
+                // 监听音乐管理器状态变化
+                if (window.musicManager) {
+                    // 设置定时器定期检查音乐管理器状态
+                    setInterval(function () {
+                        const managerStatus = window.musicManager.getStatus();
+                        if (managerStatus.currentFile && musicLoaded !== managerStatus.isLoaded) {
+                            musicLoaded = managerStatus.isLoaded;
+                        }
+                        if (isPlaying !== managerStatus.isPlaying) {
+                            isPlaying = managerStatus.isPlaying;
+                            updateButtonStates();
+                        }
+                    }, 500);
+                }
+            });
+
+            // 监听音乐状态回复
+            ipc.on('music-status-reply', function (event, status) {
+                if (status.hasMusic) {
+                    let displayName = status.fileName;
+                    if (displayName.length > 12) {
+                        displayName = displayName.slice(0, 12) + '...';
+                    }
+                    musicFileName.textContent = displayName;
+                    musicFileName.style.display = 'block';
+                    playMusicBtn.disabled = false;
+                    pauseMusicBtn.disabled = false;
+                    musicLoaded = true;
+                    isPlaying = status.isPlaying;
+                    updateButtonStates();
+                }
+            });
+
+            // 监听音乐状态变化
+            ipc.on('music-status-changed', function (event, status) {
+                isPlaying = status.isPlaying;
+                updateButtonStates();
+            });
+
+            function updateButtonStates() {
+                if (isPlaying) {
+                    playMusicBtn.textContent = '播放中...';
+                    playMusicBtn.disabled = true;
+                    pauseMusicBtn.disabled = false;
+                } else {
+                    playMusicBtn.textContent = '播放';
+                    playMusicBtn.disabled = false;
+                    pauseMusicBtn.disabled = musicLoaded ? false : true;
+                }
+            }
 
             selectMusicBtn.addEventListener('click', function () {
                 musicFileInput.click();
@@ -740,35 +795,63 @@
                 const file = e.target.files[0];
                 if (file) {
                     let name = file.name;
-                    if (name.length > 12) {
-                        name = name.slice(0, 12) + '...';
+                    let displayName = name;
+                    if (displayName.length > 12) {
+                        displayName = displayName.slice(0, 12) + '...';
                     }
-                    const url = URL.createObjectURL(file);
-                    customAudio.src = url;
-                    musicFileName.textContent = name;
-                    musicFileName.style.display = 'block';
-                    playMusicBtn.disabled = false;
-                    pauseMusicBtn.disabled = false;
-                    musicLoaded = true;
+
+                    // 创建临时URL并发送到主进程
+                    const filePath = file.path; // 在Electron中可以直接使用file.path
+
+                    ipc.send('music-load', {
+                        filePath: filePath,
+                        fileName: name
+                    });
+
+                    // 监听加载结果
+                    ipc.once('music-load-success', function (event, result) {
+                        musicFileName.textContent = displayName;
+                        musicFileName.style.display = 'block';
+                        playMusicBtn.disabled = false;
+                        pauseMusicBtn.disabled = false;
+                        musicLoaded = true;
+                        isPlaying = false;
+                        updateButtonStates();
+                    });
+
+                    ipc.once('music-load-error', function (event, error) {
+                        alert('音乐加载失败: ' + error);
+                        resetMusicUI();
+                    });
                 } else {
-                    customAudio.src = '';
-                    musicFileName.textContent = '';
-                    musicFileName.style.display = 'none';
-                    playMusicBtn.disabled = true;
-                    pauseMusicBtn.disabled = true;
-                    musicLoaded = false;
+                    resetMusicUI();
                 }
             });
 
+            function resetMusicUI() {
+                musicFileName.textContent = '';
+                musicFileName.style.display = 'none';
+                playMusicBtn.disabled = true;
+                pauseMusicBtn.disabled = true;
+                musicLoaded = false;
+                isPlaying = false;
+                updateButtonStates();
+            }
+
             playMusicBtn.addEventListener('click', function () {
-                if (musicLoaded) {
-                    customAudio.play();
+                if (musicLoaded && !isPlaying) {
+                    ipc.send('music-play');
+                    // 立即更新按钮状态以提供即时反馈
+                    playMusicBtn.textContent = '播放中...';
+                    playMusicBtn.disabled = true;
                 }
             });
 
             pauseMusicBtn.addEventListener('click', function () {
-                if (musicLoaded) {
-                    customAudio.pause();
+                if (musicLoaded && isPlaying) {
+                    ipc.send('music-pause');
+                    // 立即更新按钮状态以提供即时反馈
+                    pauseMusicBtn.disabled = true;
                 }
             });
         </script>

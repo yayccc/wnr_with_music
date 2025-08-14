@@ -40,6 +40,9 @@ let languageCodeList = ['en', 'zh-CN', 'zh-TW'], i//locale code
 let ratioList = [0.75, 0.9, 1, 1.1, 1.25], ratio = 1;//zoom ratio
 let notificationNamesList = ['work-time-end', 'work-time-end-msg', 'rest-time-end', 'rest-time-end-msg', 'all-task-end', 'all-task-end-msg'];
 
+// 音乐播放相关变量
+let currentMusicFile = null, customAudio = null, musicStore = null;
+
 app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required')//to play sounds
 
 process.env['ELECTRON_DISABLE_SECURITY_WARNINGS'] = 'true';//prevent seeing this meaningless alert
@@ -349,6 +352,7 @@ app.on('ready', () => {
     }
     styleCache = new Store({ name: 'style-cache' });
     timingData = new Store({ name: 'timing-data' });
+    musicStore = new Store({ name: 'music-config' });
 
     theThemeHasChanged();
     nativeTheme.on('updated', theThemeHasChanged);
@@ -717,6 +721,12 @@ app.on('ready', () => {
                     "store.set(\"windows-7-notification\", 1);");
             }
         }
+    }
+
+    // 恢复保存的音乐状态
+    const savedMusicFile = musicStore.get('currentMusicFile', '');
+    if (savedMusicFile && require('fs').existsSync(savedMusicFile)) {
+        currentMusicFile = savedMusicFile;
     }
 })
 
@@ -2527,3 +2537,133 @@ ipcMain.on("zoom-ratio-change", function (event, message) {
     settingsWin.setSize(Math.floor((isChinese ? 420 : 472) * ratio), Math.floor(636 * ratio), true);
     win.webContents.send('zoom-ratio-feedback');
 })
+
+// 音乐播放相关IPC事件处理
+ipcMain.on('music-load', function (event, message) {
+    try {
+        currentMusicFile = message.filePath;
+        // 从文件路径中提取文件名
+        const fileName = path.basename(currentMusicFile);
+        
+        musicStore.set('currentMusicFile', currentMusicFile);
+        musicStore.set('musicFileName', fileName);
+        
+        event.reply('music-load-success', {
+            fileName: fileName,
+            loaded: true
+        });
+    } catch (error) {
+        console.error('Music load error:', error);
+        event.reply('music-load-error', error.message);
+    }
+});
+
+ipcMain.on('music-play', function (event) {
+    try {
+        if (currentMusicFile) {
+            // 在渲染进程中播放音乐，通过消息传递控制
+            if (win) {
+                win.webContents.send('music-play-request', { filePath: currentMusicFile });
+            }
+            // 不在这里立即设置状态，等待渲染进程反馈
+            event.reply('music-play-success');
+        } else {
+            event.reply('music-play-error', 'No music loaded');
+        }
+    } catch (error) {
+        console.error('Music play error:', error);
+        event.reply('music-play-error', error.message);
+    }
+});
+
+ipcMain.on('music-pause', function (event) {
+    try {
+        if (currentMusicFile) {
+            // 通知渲染进程暂停音乐
+            if (win) {
+                win.webContents.send('music-pause-request');
+            }
+            // 不在这里立即设置状态，等待渲染进程反馈
+            event.reply('music-pause-success');
+        } else {
+            event.reply('music-pause-error', 'No music loaded');
+        }
+    } catch (error) {
+        console.error('Music pause error:', error);
+        event.reply('music-pause-error', error.message);
+    }
+});
+
+ipcMain.on('music-stop', function (event) {
+    try {
+        if (currentMusicFile) {
+            // 通知渲染进程停止音乐
+            if (win) {
+                win.webContents.send('music-stop-request');
+            }
+            // 不在这里立即设置状态，等待渲染进程反馈
+            event.reply('music-stop-success');
+        } else {
+            event.reply('music-stop-error', 'No music loaded');
+        }
+    } catch (error) {
+        console.error('Music stop error:', error);
+        event.reply('music-stop-error', error.message);
+    }
+});
+
+ipcMain.on('music-get-status', function (event) {
+    const status = {
+        hasMusic: !!currentMusicFile,
+        isPlaying: musicStore.get('isPlaying', false),
+        fileName: musicStore.get('musicFileName', ''),
+        filePath: musicStore.get('currentMusicFile', '')
+    };
+    event.reply('music-status-reply', status);
+});
+
+// 新增：获取当前音乐状态（用于页面初始化时恢复状态）
+ipcMain.on('music-get-current-state', function (event) {
+    const state = {
+        filePath: currentMusicFile,
+        isPlaying: musicStore.get('isPlaying', false),
+        fileName: musicStore.get('musicFileName', '')
+    };
+    event.reply('music-restore-state', state);
+});
+
+// 新增：处理渲染进程的播放成功反馈
+ipcMain.on('music-play-success-from-renderer', function (event) {
+    musicStore.set('isPlaying', true);
+    // 通知所有窗口音乐状态
+    if (win) win.webContents.send('music-status-changed', { isPlaying: true });
+});
+
+// 新增：处理渲染进程的暂停成功反馈
+ipcMain.on('music-pause-success-from-renderer', function (event) {
+    musicStore.set('isPlaying', false);
+    // 通知所有窗口音乐状态
+    if (win) win.webContents.send('music-status-changed', { isPlaying: false });
+});
+
+// 新增：处理渲染进程的停止成功反馈
+ipcMain.on('music-stop-success-from-renderer', function (event) {
+    musicStore.set('isPlaying', false);
+    // 通知所有窗口音乐状态
+    if (win) win.webContents.send('music-status-changed', { isPlaying: false });
+});
+
+// 新增：处理渲染进程的播放失败反馈
+ipcMain.on('music-play-failed', function (event) {
+    musicStore.set('isPlaying', false);
+    // 通知所有窗口音乐状态
+    if (win) win.webContents.send('music-status-changed', { isPlaying: false });
+});
+
+// 应用退出时清理音乐资源
+app.on('before-quit', () => {
+    if (win) {
+        win.webContents.send('music-stop-request');
+    }
+    currentMusicFile = null;
+});
